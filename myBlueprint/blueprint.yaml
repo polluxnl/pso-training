@@ -1,1 +1,81 @@
-
+formatVersion: 1
+inputs: {}
+resources:
+  SecurityGroup_web:
+    type: Cloud.SecurityGroup
+    properties:
+      securityGroupType: new
+      name: sg-web-tier
+  SecurityGroup_app:
+    type: Cloud.SecurityGroup
+    properties:
+      securityGroupType: new
+      name: sg-app-tier
+  SecurityGroup_db:
+    type: Cloud.SecurityGroup
+    properties:
+      securityGroupType: new
+      name: sg-db-tier
+  Cloud_NSX_LoadBalancer_1:
+    type: Cloud.NSX.LoadBalancer
+    properties:
+      name: web-tier-loadbalancer
+      constraints:
+        - tag: 'net:webtier'
+      routes:
+        - port: '80'
+          protocol: HTTP
+          instancePort: ''
+          instanceProtocol: HTTP
+      network: '${resource.Cloud_NSX_Network_1.id}'
+      instances:
+        - '${resource.Cloud_vSphere_Machine_1.id}'
+  Cloud_vSphere_Machine_1:
+    type: Cloud.vSphere.Machine
+    properties:
+      image: Ubuntu18
+      cpuCount: 1
+      count: 2
+      totalMemoryMB: 1024
+      networks:
+        - network: '${resource.Cloud_NSX_Network_1.id}'
+          securityGroups:
+            - '${resource.SecurityGroup_web.id}'
+  Cloud_vSphere_Machine_2:
+    type: Cloud.vSphere.Machine
+    properties:
+      image: Ubuntu18
+      cpuCount: 1
+      totalMemoryMB: 1024
+      networks:
+        - network: '${resource.Cloud_NSX_Network_2.id}'
+          securityGroups:
+            - '${resource.SecurityGroup_app.id}'
+  Cloud_vSphere_Machine_3:
+    type: Cloud.vSphere.Machine
+    properties:
+      image: Ubuntu18
+      cpuCount: 1
+      totalMemoryMB: 1024
+      networks:
+        - network: '${resource.Cloud_NSX_Network_3.id}'
+          securityGroups:
+            - '${resource.SecurityGroup_db.id}'
+  Cloud_NSX_Network_1:
+    type: Cloud.NSX.Network
+    properties:
+      networkType: routed
+      constraints:
+        - tag: 'net:webtier'
+  Cloud_NSX_Network_2:
+    type: Cloud.NSX.Network
+    properties:
+      networkType: routed
+      constraints:
+        - tag: 'net:apptier'
+  Cloud_NSX_Network_3:
+    type: Cloud.NSX.Network
+    properties:
+      networkType: routed
+      constraints:
+        - tag: 'net:dbtier'
